@@ -8,7 +8,6 @@ load_dotenv()
 
 app = FastMCP()
 CORE_APP_URL = os.getenv("CORE_APP_URL")
-SERVICE_AUTH_TOKEN = os.getenv("SERVICE_AUTH_TOKEN")
 
 # ---- Helper to call Django safely ----
 def get_struggling_students(class_id, subject, period):
@@ -21,7 +20,6 @@ def get_struggling_students(class_id, subject, period):
                 "subject": subject,
                 "period": period,
             },
-            headers={"Authorization": f"Bearer {SERVICE_AUTH_TOKEN}"},
             timeout=5,
         )
         resp.raise_for_status()
