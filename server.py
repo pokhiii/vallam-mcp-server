@@ -54,10 +54,8 @@ def get_struggling_students(class_id, subject, period):
         return {"error": f"Unexpected error: {str(e)}", "students": []}
 
 
-# ---- REST API ENDPOINTS ----
 @rest_app.post("/mcp/search")
 async def rest_search(request: SearchRequest):
-    """REST endpoint for search queries"""
     try:
         result = search_logic(request.query)
         return result
@@ -66,7 +64,6 @@ async def rest_search(request: SearchRequest):
 
 @rest_app.get("/mcp/fetch/{student_id}")
 async def rest_fetch(student_id: str):
-    """REST endpoint to fetch student details"""
     try:
         result = fetch_logic(student_id)
         return result
@@ -78,7 +75,6 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "vallam-mcp-server"}
 
-# ---- SHARED LOGIC ----
 def extract_params_from_query(query: str):
     """Extract class_id, subject, and period from natural language query."""
     import re
