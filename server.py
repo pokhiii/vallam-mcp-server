@@ -32,6 +32,9 @@ class SearchRequest(BaseModel):
 def get_struggling_students(class_id, subject, period):
     """Query the core Django app for struggling students."""
     try:
+        if not CORE_APP_URL:
+            return {"error": "CORE_APP_URL not configured", "students": []}
+        
         resp = requests.get(
             f"{CORE_APP_URL}/api/v1/assistant/students/struggling",
             params={
@@ -44,8 +47,10 @@ def get_struggling_students(class_id, subject, period):
         )
         resp.raise_for_status()
         return resp.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Core app unavailable: {str(e)}", "students": []}
     except Exception as e:
-        return {"error": f"Core app unavailable: {str(e)}"}
+        return {"error": f"Unexpected error: {str(e)}", "students": []}
 
 
 # ---- REST API ENDPOINTS ----
@@ -82,13 +87,22 @@ def search_logic(query: str):
     # For now, assume class_id=3, subject="math"
     data = get_struggling_students(class_id=7, subject="math", period="last_month")
 
+    # Check if there's an error from the core app
+    if "error" in data:
+        return {"results": [], "error": data["error"]}
+
     results = []
     for s in data.get("students", []):
-        results.append({
-            "id": str(s["id"]),
-            "title": s["name"],
-            "url": f"/students/{s['id']}"
-        })
+        # Safely get student_id with fallback options
+        student_id = s.get("id") or s.get("student_id") or s.get("pk")
+        student_name = s.get("name") or s.get("student_name") or "Unknown"
+        
+        if student_id:
+            results.append({
+                "id": str(student_id),
+                "title": student_name,
+                "url": f"/students/{student_id}"
+            })
 
     return {"results": results}
 
