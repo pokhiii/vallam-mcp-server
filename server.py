@@ -87,13 +87,11 @@ def search_logic(query: str):
     # For now, assume class_id=3, subject="math"
     data = get_struggling_students(class_id=7, subject="math", period="last_month")
 
-    # Check if there's an error from the core app
     if "error" in data:
         return {"results": [], "error": data["error"]}
 
     results = []
     for s in data.get("students", []):
-        # Safely get student_id with fallback options
         student_id = s.get("id") or s.get("student_id") or s.get("pk")
         student_name = s.get("name") or s.get("student_name") or "Unknown"
         
