@@ -79,31 +79,85 @@ async def health_check():
     return {"status": "healthy", "service": "vallam-mcp-server"}
 
 # ---- SHARED LOGIC ----
+def extract_params_from_query(query: str):
+    """Extract class_id, subject, and period from natural language query."""
+    import re
+    
+    query_lower = query.lower()
+    
+    # Extract class_id (e.g., "class 7", "7th class", "grade 6")
+    class_match = re.search(r'(?:class|grade)\s*(\d+)(?:th|st|nd|rd)?', query_lower)
+    if not class_match:
+        class_match = re.search(r'(\d+)(?:th|st|nd|rd)?\s*(?:class|grade)', query_lower)
+    class_id = class_match.group(1) if class_match else None
+    
+    # Extract subject (math, english, science, etc.)
+    subjects = ["math", "english", "science", "history", "geography", "physics", "chemistry", "biology"]
+    subject = None
+    for subj in subjects:
+        if subj in query_lower:
+            subject = subj
+            break
+    
+    # Extract time period
+    period = None
+    if "this month" in query_lower:
+        period = "this_month"
+    elif "last month" in query_lower:
+        period = "last_month"
+    elif "this year" in query_lower:
+        period = "this_year"
+    elif "last year" in query_lower:
+        period = "last_year"
+    
+    return class_id, subject, period
+
 def search_logic(query: str):
     """
     Handle user search queries like:
-    "find struggling students of class 3rd in math"
+    "find struggling students of class 7 in math this month"
     """
-    # You can add simple pattern extraction here
-    # For now, assume class_id=3, subject="math"
-    data = get_struggling_students(class_id=7, subject="math", period="last_month")
+    class_id, subject, period = extract_params_from_query(query)
+    
+    # Validate required parameters
+    if not class_id or not subject:
+        return {
+            "results": [],
+            "error": f"Could not extract required parameters from query. Found: class_id={class_id}, subject={subject}",
+            "hint": "Try: 'find struggling students of class 7 in math this month'"
+        }
+    
+    data = get_struggling_students(class_id=class_id, subject=subject, period=period or "")
 
     if "error" in data:
         return {"results": [], "error": data["error"]}
 
+    students_list = data.get("students", [])
+    
     results = []
-    for s in data.get("students", []):
-        student_id = s.get("id") or s.get("student_id") or s.get("pk")
-        student_name = s.get("name") or s.get("student_name") or "Unknown"
+    for s in students_list:
+        student_name = s.get("name", "Unknown")
+        score = s.get("score", "N/A")
+        date = s.get("date", "N/A")
         
-        if student_id:
-            results.append({
-                "id": str(student_id),
-                "title": student_name,
-                "url": f"/students/{student_id}"
-            })
+        results.append({
+            "name": student_name,
+            "class": s.get("class_id"),
+            "subject": s.get("subject"),
+            "score": score,
+            "date": date,
+            "url": f"/students/{student_name.replace(' ', '_')}"
+        })
 
-    return {"results": results}
+    return {
+        "results": results,
+        "query_params": {
+            "class_id": class_id,
+            "subject": subject,
+            "period": period
+        },
+        "total_students": len(results)
+    }
 
 def fetch_logic(student_id: str):
     """Fetch full student report for a given student ID."""
