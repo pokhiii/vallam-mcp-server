@@ -85,13 +85,11 @@ def extract_params_from_query(query: str):
     
     query_lower = query.lower()
     
-    # Extract class_id (e.g., "class 7", "7th class", "grade 6")
     class_match = re.search(r'(?:class|grade)\s*(\d+)(?:th|st|nd|rd)?', query_lower)
     if not class_match:
         class_match = re.search(r'(\d+)(?:th|st|nd|rd)?\s*(?:class|grade)', query_lower)
     class_id = class_match.group(1) if class_match else None
     
-    # Extract subject (math, english, science, etc.)
     subjects = ["math", "english", "science", "history", "geography", "physics", "chemistry", "biology"]
     subject = None
     for subj in subjects:
@@ -99,7 +97,6 @@ def extract_params_from_query(query: str):
             subject = subj
             break
     
-    # Extract time period
     period = None
     if "this month" in query_lower:
         period = "this_month"
@@ -119,7 +116,6 @@ def search_logic(query: str):
     """
     class_id, subject, period = extract_params_from_query(query)
     
-    # Validate required parameters
     if not class_id or not subject:
         return {
             "results": [],
