@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -148,6 +149,4 @@ def mcp_fetch(student_id: str):
     }
 
 if __name__ == "__main__":
-    import uvicorn
-    # Run the REST API server
     uvicorn.run(rest_app, host="0.0.0.0", port=8010)
